@@ -1,0 +1,6 @@
+/* Change the color of all primary buttons to slateblue */
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
