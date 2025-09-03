@@ -7,6 +7,10 @@
   --surface-color: #ffffff;
   --text-color: #000000;
 
+  /* UI colors */
+  --input-border-color: #ccc;
+  --button-text-color: #ffffff;
+
   /* Shadows */
   --shadow-color: rgba(0, 0, 0, 0.1);
 }
@@ -16,4 +20,30 @@ body {
   background-color: var(--background-color);
   font-family: 'Segoe UI', sans-serif;
   color: var(--text-color);
+}
+
+.card {
+  border-radius: 12px;
+}
+
+.list-group-item {
+  padding: 0.8rem 1rem;
+}
+
+.repo-stats {
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .list-group-item {
+    font-size: 0.9rem;
+  }
+
+  .list-group-item a {
+    font-size: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.2rem;
+  }
 }

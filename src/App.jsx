@@ -1,47 +1,155 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
 import Header from './components/Header/Header';
 
 function App() {
-  const [avatarURL, setAvatarURL] = useState();
-  const [login, setLogin] = useState();
-  const [followersURL, setFollowersURL] = useState();
+  const [user, setUser] = useState(null);
+  const [repos, setRepos] = useState([]);
+  const [searchRepo, setSearchRepo] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetch('https://api.github.com/users/NJul')
+  const fetchUser = username => {
+    fetch(`https://api.github.com/users/${username}`)
       .then(res => res.json())
-      .then(
-        result => {
-          console.log(result);
-          setAvatarURL(result.avatar_url);
-          setLogin(result.login);
-          setFollowersURL(result.followers_url);
-        },
-        error => {
-          console.log(error);
+      .then(result => {
+        if (result.message === 'Not Found') {
+          setError('User not found');
+          setUser(null);
+          setRepos([]);
+        } else {
+          setError('');
+          setUser(result);
+          setRepos([]);
         }
-      );
-  }, []);
+      })
+      .catch(() => {
+        setError('Something went wrong');
+        setUser(null);
+        setRepos([]);
+      });
+  };
+
+  const fetchRepos = username => {
+    fetch(`https://api.github.com/users/${username}/repos`)
+      .then(res => res.json())
+      .then(result => {
+        if (Array.isArray(result)) {
+          setRepos(result);
+        } else {
+          setRepos([]);
+        }
+      })
+      .catch(() => setRepos([]));
+  };
+
+  const filteredRepos = repos.filter(
+    repo =>
+      repo.name.toLowerCase().includes(searchRepo.toLowerCase()) ||
+      (repo.description &&
+        repo.description.toLowerCase().includes(searchRepo.toLowerCase()))
+  );
 
   return (
     <>
-      <Header />
+      <Header onSearch={fetchUser} />
 
-      <div className='w-100 min-vh-100 d-flex justify-content-center align-items-center'>
-        <Card style={{ width: '18rem' }}>
-          <Card.Img variant='top' src={avatarURL} />
-          <Card.Body className='text-center'>
-            <Card.Title>{login}</Card.Title>
-            <Card.Text>
-              <a href={followersURL} target='_blank' rel='noopener noreferrer'>
-                Followers
-              </a>
-            </Card.Text>
-            <Button variant='primary'>List my public repos</Button>
-          </Card.Body>
-        </Card>
-      </div>
+      <Container fluid className='py-4'>
+        <Row className='justify-content-center'>
+          {error && <p className='text-danger text-center'>{error}</p>}
+
+          {user && (
+            <Col xs={12} sm={10} md={6} lg={4} className='mb-4'>
+              <Card className='shadow-sm h-100'>
+                <Card.Img variant='top' src={user.avatar_url} />
+                <Card.Body className='text-center'>
+                  <Card.Title>{user.login}</Card.Title>
+                  <Card.Text>
+                    <a
+                      href={user.html_url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                    >
+                      View Profile
+                    </a>
+                  </Card.Text>
+                  <Card.Text>
+                    Followers: {user.followers} | Following: {user.following}
+                  </Card.Text>
+                  <Button
+                    variant='primary'
+                    onClick={() => fetchRepos(user.login)}
+                  >
+                    Show Public Repos
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          )}
+        </Row>
+
+        {repos.length > 0 && (
+          <Row className='justify-content-center'>
+            <Col xs={12} sm={11} md={10} lg={8}>
+              <Card className='shadow-sm'>
+                <Card.Body>
+                  <Card.Title className='text-center mb-3'>
+                    Public Repositories
+                  </Card.Title>
+
+                  <Form className='mb-3'>
+                    <Form.Control
+                      type='text'
+                      placeholder='Search repositories ...'
+                      value={searchRepo}
+                      onChange={e => setSearchRepo(e.target.value)}
+                    />
+                  </Form>
+
+                  <ListGroup variant='flush'>
+                    {filteredRepos.length > 0 ? (
+                      filteredRepos.map(repo => (
+                        <ListGroup.Item
+                          key={repo.id}
+                          className='d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center'
+                        >
+                          <div>
+                            <a
+                              href={repo.html_url}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='fw-semibold'
+                            >
+                              {repo.name}
+                            </a>
+                            {repo.description && (
+                              <p className='mb-1 small text-muted'>
+                                {repo.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className='repo-stats text-muted small mt-2 mt-md-0'>
+                            ⭐ {repo.stargazers_count} | 🍴 {repo.forks_count}
+                          </div>
+                        </ListGroup.Item>
+                      ))
+                    ) : (
+                      <p className='text-center text-muted'>
+                        No repositories found
+                      </p>
+                    )}
+                  </ListGroup>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+      </Container>
     </>
   );
 }
