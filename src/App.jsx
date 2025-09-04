@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -6,46 +6,61 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
+import Spinner from 'react-bootstrap/Spinner';
 import Header from './components/Header/Header';
 
 function App() {
   const [user, setUser] = useState(null);
   const [repos, setRepos] = useState([]);
   const [searchRepo, setSearchRepo] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [reposLoading, setReposLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastSearchedUser, setLastSearchedUser] = useState('');
+  const [lastFetchedReposUser, setLastFetchedReposUser] = useState('');
 
-  const fetchUser = username => {
-    fetch(`https://api.github.com/users/${username}`)
-      .then(res => res.json())
-      .then(result => {
-        if (result.message === 'Not Found') {
-          setError('User not found');
-          setUser(null);
-          setRepos([]);
-        } else {
-          setError('');
-          setUser(result);
-          setRepos([]);
-        }
-      })
-      .catch(() => {
-        setError('Something went wrong');
-        setUser(null);
-        setRepos([]);
-      });
+  const fetchUser = async username => {
+    if (username.toLowerCase() === lastSearchedUser.toLowerCase()) return;
+
+    setLoading(true);
+    setError('');
+    setUser(null);
+    setRepos([]);
+    setLastFetchedReposUser('');
+
+    try {
+      const res = await fetch(`https://api.github.com/users/${username}`);
+      const result = await res.json();
+
+      if (result.message === 'Not Found') {
+        setError('User not found');
+      } else {
+        setUser(result);
+        setLastSearchedUser(username);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Something went wrong');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fetchRepos = username => {
-    fetch(`https://api.github.com/users/${username}/repos`)
-      .then(res => res.json())
-      .then(result => {
-        if (Array.isArray(result)) {
-          setRepos(result);
-        } else {
-          setRepos([]);
-        }
-      })
-      .catch(() => setRepos([]));
+  const fetchRepos = async username => {
+    if (username.toLowerCase() === lastFetchedReposUser.toLowerCase()) return;
+
+    setReposLoading(true);
+    try {
+      const res = await fetch(`https://api.github.com/users/${username}/repos`);
+      const result = await res.json();
+      setRepos(Array.isArray(result) ? result : []);
+      setLastFetchedReposUser(username);
+    } catch (err) {
+      console.error(err);
+      setRepos([]);
+    } finally {
+      setReposLoading(false);
+    }
   };
 
   const filteredRepos = repos.filter(
@@ -55,6 +70,10 @@ function App() {
         repo.description.toLowerCase().includes(searchRepo.toLowerCase()))
   );
 
+  useEffect(() => {
+    fetchUser('NJul');
+  }, []);
+
   return (
     <>
       <Header onSearch={fetchUser} />
@@ -63,37 +82,53 @@ function App() {
         <Row className='justify-content-center'>
           {error && <p className='text-danger text-center'>{error}</p>}
 
-          {user && (
-            <Col xs={12} sm={10} md={6} lg={4} className='mb-4'>
-              <Card className='shadow-sm h-100'>
-                <Card.Img variant='top' src={user.avatar_url} />
-                <Card.Body className='text-center'>
-                  <Card.Title>{user.login}</Card.Title>
-                  <Card.Text>
-                    <a
-                      href={user.html_url}
-                      target='_blank'
-                      rel='noopener noreferrer'
+          {loading ? (
+            <div className='d-flex justify-content-center align-items-center py-5'>
+              <Spinner animation='border' role='status' variant='primary'>
+                <span className='visually-hidden'>Loading user ...</span>
+              </Spinner>
+            </div>
+          ) : (
+            user && (
+              <Col xs={12} sm={10} md={6} lg={4} className='mb-4'>
+                <Card className='shadow-sm h-100'>
+                  <Card.Img variant='top' src={user.avatar_url} />
+                  <Card.Body className='text-center'>
+                    <Card.Title>{user.login}</Card.Title>
+                    <Card.Text>
+                      <a
+                        href={user.html_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                      >
+                        View Profile
+                      </a>
+                    </Card.Text>
+                    <Card.Text>
+                      Followers: {user.followers} | Following: {user.following}
+                    </Card.Text>
+                    <Button
+                      variant='primary'
+                      onClick={() => fetchRepos(user.login)}
                     >
-                      View Profile
-                    </a>
-                  </Card.Text>
-                  <Card.Text>
-                    Followers: {user.followers} | Following: {user.following}
-                  </Card.Text>
-                  <Button
-                    variant='primary'
-                    onClick={() => fetchRepos(user.login)}
-                  >
-                    Show Public Repos
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
+                      Show Public Repos
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            )
           )}
         </Row>
 
-        {repos.length > 0 && (
+        {reposLoading && (
+          <div className='d-flex justify-content-center align-items-center py-4'>
+            <Spinner animation='border' role='status' variant='secondary'>
+              <span className='visually-hidden'>Loading repositories...</span>
+            </Spinner>
+          </div>
+        )}
+
+        {!reposLoading && repos.length > 0 && (
           <Row className='justify-content-center'>
             <Col xs={12} sm={11} md={10} lg={8}>
               <Card className='shadow-sm'>
@@ -103,7 +138,15 @@ function App() {
                   </Card.Title>
 
                   <Form className='mb-3'>
+                    <Form.Label
+                      htmlFor='repo-search'
+                      className='visually-hidden'
+                    >
+                      Search Repositories
+                    </Form.Label>
                     <Form.Control
+                      id='repo-search'
+                      name='repoSearch'
                       type='text'
                       placeholder='Search repositories ...'
                       value={searchRepo}

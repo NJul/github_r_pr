@@ -6,6 +6,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .title {
@@ -24,15 +25,13 @@
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--input-border-color);
   border-radius: 6px;
+  background-color: var(--surface-color);
+  color: var(--text-color);
 }
 
-.searchButton {
-  background-color: var(--primary-color);
-  color: var(--button-text-color);
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  cursor: pointer;
+.themeToggle {
+  display: flex;
+  align-items: center;
 }
 
 @media (max-width: 600px) {
@@ -50,5 +49,9 @@
   .searchInput,
   .searchButton {
     width: 100%;
+  }
+
+  .themeToggle {
+    justify-content: center;
   }
 }

@@ -1,6 +1,55 @@
-/* Change the color of all primary buttons to slateblue */
+button,
+.btn,
+.btn-primary,
+.searchButton {
+  background-color: var(--primary-color) !important;
+  border: 1px solid var(--primary-color) !important;
+  color: var(--button-text-color) !important;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease,
+    border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
 
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+button:hover,
+.btn:hover,
+.btn-primary:hover,
+.searchButton:hover {
+  background-color: color-mix(
+    in srgb,
+    var(--primary-color) 85%,
+    white
+  ) !important;
+  border-color: color-mix(in srgb, var(--primary-color) 85%, white) !important;
+  transform: translateY(-2px);
+}
+
+button:active,
+.btn:active,
+.btn-primary:active,
+.searchButton:active,
+button:focus,
+.btn:focus,
+.btn-primary:focus,
+.searchButton:focus,
+button:focus-visible,
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.searchButton:focus-visible {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  transform: translateY(0);
+  box-shadow: 0 0 0 0.25rem
+    color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
+  outline: none !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem
+    color-mix(in srgb, var(--primary-color) 40%, transparent) !important;
 }
